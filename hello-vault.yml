@@ -1,8 +1,11 @@
-# hello_vault.yml
 - name: Test Vault Lookup
   hosts: localhost
   gather_facts: false
   tasks:
+    - name: Hello from playbook
+      debug:
+        msg: "Vault lookup playbook has been executed"
+
     - name: Read DB_USER from Vault
       debug:
         msg: "{{ lookup('community.hashi_vault.hashi_vault', 'apps/data/config/awxapp:DB_USER', auth_method='approle') }}"
