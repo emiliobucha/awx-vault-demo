@@ -1,0 +1,36 @@
+- name: Test Vault Lookup via URI
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vault_role_id: "{{ lookup('env', 'VAULT_ROLE_ID') }}"
+    vault_secret_id: "{{ lookup('env', 'VAULT_SECRET_ID') }}"
+    vault_addr: "{{ lookup('env', 'VAULT_ADDR') }}"
+    vault_path: "apps/data/config/awxapp"
+  tasks:
+    - name: Authenticate to Vault using AppRole
+      uri:
+        url: "{{ vault_addr }}/v1/auth/approle/login"
+        method: POST
+        body_format: json
+        body:
+          role_id: "{{ vault_role_id }}"
+          secret_id: "{{ vault_secret_id }}"
+        return_content: yes
+      register: login_response
+
+    - name: Extract client token
+      set_fact:
+        vault_token: "{{ login_response.json.auth.client_token }}"
+
+    - name: Read secret from Vault
+      uri:
+        url: "{{ vault_addr }}/v1/{{ vault_path }}"
+        method: GET
+        headers:
+          "X-Vault-Token": "{{ vault_token }}"
+        return_content: yes
+      register: vault_secret
+
+    - name: Show DB_USER from secret
+      debug:
+        msg: "DB_USER is {{ vault_secret.json.data.data.DB_USER }}"
